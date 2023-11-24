@@ -1,8 +1,8 @@
 #!/bin/sh
 
-###########################################################
+# ##########################################################
 # DISCLAIMER
-###########################################################
+# ##########################################################
 # This script is provided as-is, without any warranty or
 # guarantee of any kind. The author(s) assume no liability
 # for any damage or loss caused by the use or misuse of
@@ -21,7 +21,7 @@
 # By using this script, you agree that the author(s) shall
 # not be held responsible for any issues that may arise
 # during its use.
-###########################################################
+# ##########################################################
 # Author: Erellariss
 
 # temperature to power grid : GRIDxx=yy : we want power of yy if temp is xx
@@ -66,10 +66,13 @@ do
         echo "Setting fan from $CURRENT_POWER to $DESIRED_POWER PWM for $CURRENT_TEMP C as highest drives temp"
         set_fan_pwm "$DESIRED_POWER"
         TRIGGER_TIME=$(date +%s.%N)
-        TIME_TO_SLEEP="$(echo "$TRIGGER_TIME-$INIT_TIME-1" | bc)"
-        echo "Sleeping $TIME_TO_SLEEP s for new check..."
+        TIME_TO_SLEEP="$(echo "$TRIGGER_TIME-$INIT_TIME-1" | bc | grep "^[0-9]" )"
         INIT_TIME=$(date +%s.%N)
-        sleep "$TIME_TO_SLEEP"
+        if [ -n "$TIME_TO_SLEEP" ]
+        then
+          echo "Sleeping $TIME_TO_SLEEP s for new check..."
+          sleep "$TIME_TO_SLEEP"
+        fi
     fi
     sleep 0.1
 done
