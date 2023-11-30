@@ -54,25 +54,29 @@ set_fan_pwm() {
     fanctrl -setfanpwm 0 "$1"
 }
 
-INIT_TIME=$(date +%s.%N)
-echo "Starting smart fan control..."
-while :
-do
-    CURRENT_TEMP=$(read_smart_temp)
-    DESIRED_POWER=$(get_pwm_by_temp "$CURRENT_TEMP")
-    CURRENT_POWER=$(fanctrl -getfanspeed|awk ' { print $NF } ' )
-    if [ -n "$DESIRED_POWER" ] && [ "$DESIRED_POWER" -ne "$CURRENT_POWER" ]
-    then
-        echo "Setting fan from $CURRENT_POWER to $DESIRED_POWER PWM for $CURRENT_TEMP C as highest drives temp"
-        set_fan_pwm "$DESIRED_POWER"
-        TRIGGER_TIME=$(date +%s.%N)
-        TIME_TO_SLEEP="$(echo "$TRIGGER_TIME-$INIT_TIME-1" | bc | grep "^[0-9]" )"
-        INIT_TIME=$(date +%s.%N)
-        if [ -n "$TIME_TO_SLEEP" ]
+run_smart_fan_control() {
+    INIT_TIME=$(date +%s.%N)
+    echo "Starting smart fan control..."
+    while :
+    do
+        CURRENT_TEMP=$(read_smart_temp)
+        DESIRED_POWER=$(get_pwm_by_temp "$CURRENT_TEMP")
+        CURRENT_POWER=$(fanctrl -getfanspeed|awk ' { print $NF } ' )
+        if [ -n "$DESIRED_POWER" ] && [ "$DESIRED_POWER" -ne "$CURRENT_POWER" ]
         then
-          echo "Sleeping $TIME_TO_SLEEP s for new check..."
-          sleep "$TIME_TO_SLEEP"
+            echo "Setting fan from $CURRENT_POWER to $DESIRED_POWER PWM for $CURRENT_TEMP C as highest drives temp"
+            set_fan_pwm "$DESIRED_POWER"
+            TRIGGER_TIME=$(date +%s.%N)
+            TIME_TO_SLEEP="$(echo "$TRIGGER_TIME-$INIT_TIME-1" | bc | grep "^[0-9]" )"
+            INIT_TIME=$(date +%s.%N)
+            if [ -n "$TIME_TO_SLEEP" ]
+            then
+              echo "Sleeping $TIME_TO_SLEEP s for new check..."
+              sleep "$TIME_TO_SLEEP"
+            fi
         fi
-    fi
-    sleep 0.1
-done
+        sleep 0.1
+    done
+}
+
+run_smart_fan_control &
